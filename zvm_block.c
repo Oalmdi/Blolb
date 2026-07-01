@@ -133,7 +133,7 @@ bool blb_cursor_jump(blb_cursor_t *cursor, uint32_t value){
 }
 
 blb_blob_t *blb_blob_create(uint32_t size, uint8_t step){
-    // إصلاح: إضافة * وتعديل الـ Cast هنا
+
     blb_blob_t *blob = (blb_blob_t*)malloc(sizeof(blb_blob_t));
     if(blob){
         blob->block = blb_block_create(size);
