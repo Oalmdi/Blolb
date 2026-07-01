@@ -1,10 +1,8 @@
 #include "zvm_block.h"
 
-// إصلاح: إضافة * ليصبح مؤشراً blb_block_t* وتعديل الـ Cast
 blb_block_t *blb_block_create(uint32_t size){
     if(size == 0 || (size > BLB_BLOCK_MAX_SIZE)) return NULL;
 
-    // إصلاح: إضافة * وتعديل الـ Cast هنا
     blb_block_t *blk = (blb_block_t*)malloc(sizeof(blb_block_t));
 
     if(blk){
@@ -58,9 +56,7 @@ void blb_block_print(blb_block_t *block, FILE *output){
     }
 }
 
-// إصلاح: الدالة ترجع مؤشر blb_range_t*
 blb_range_t *blb_range_create(uint32_t start, uint32_t size, uint8_t step, bool fixed){
-    // إصلاح: إضافة * وتعديل الـ Cast هنا
     blb_range_t *range = (blb_range_t*)malloc(sizeof(blb_range_t));
     if(!range) return NULL;
 
@@ -109,7 +105,7 @@ bool blb_range_in(blb_range_t *range, int32_t value){
 }
 
 blb_cursor_t *blb_cursor_create(int32_t offset, bool fixed){
-    // إصلاح: إضافة * وتعديل الـ Cast هنا
+
     blb_cursor_t *cursor = (blb_cursor_t*)malloc(sizeof(blb_cursor_t));
     if(!cursor) return NULL;
 
@@ -152,7 +148,7 @@ blb_blob_t *blb_blob_create(uint32_t size, uint8_t step){
             }
             blb_block_delete(blob->block);
         }
-        blb_blob_delete(blob); // مصلحة تلقائياً بعد جعل blob مؤشر
+        blb_blob_delete(blob);
     }
     return NULL;
 }
@@ -162,7 +158,7 @@ void blb_blob_delete(blb_blob_t *blob){
         if(blob->block) blb_block_delete(blob->block);
         if(blob->range) blb_range_delete(blob->range);
         if(blob->cursor) blb_cursor_delete(blob->cursor);
-        free(blob); // إضافة: تحرير الـ blob نفسه من الذاكرة
+        free(blob); 
     }
 }
 
@@ -203,7 +199,7 @@ void blb_blob_print(blb_blob_t *blob, FILE *output) {
         blb_block_print(blob->block, output);
     }
     
-    fprintf(output, "-------------------\\n");
+   
 }
 
 bool blb_blob_jump(blb_blob_t *blob, uint32_t value){
