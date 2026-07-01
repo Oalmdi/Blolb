@@ -1,10 +1,11 @@
-#include "blobify.h"
+#include "zvm_block.h"
 
-
+// إصلاح: إضافة * ليصبح مؤشراً blb_block_t* وتعديل الـ Cast
 blb_block_t *blb_block_create(uint32_t size){
     if(size == 0 || (size > BLB_BLOCK_MAX_SIZE)) return NULL;
 
-    blb_block_t blk = (blb_block_t)malloc(sizeof(blb_block_t));
+    // إصلاح: إضافة * وتعديل الـ Cast هنا
+    blb_block_t *blk = (blb_block_t*)malloc(sizeof(blb_block_t));
 
     if(blk){
         blk->base = (uint8_t*)malloc(size);
@@ -57,8 +58,10 @@ void blb_block_print(blb_block_t *block, FILE *output){
     }
 }
 
+// إصلاح: الدالة ترجع مؤشر blb_range_t*
 blb_range_t *blb_range_create(uint32_t start, uint32_t size, uint8_t step, bool fixed){
-    blb_range_t range = (blb_range_t)malloc(sizeof(blb_range_t));
+    // إصلاح: إضافة * وتعديل الـ Cast هنا
+    blb_range_t *range = (blb_range_t*)malloc(sizeof(blb_range_t));
     if(!range) return NULL;
 
     range->start = start;
@@ -106,7 +109,8 @@ bool blb_range_in(blb_range_t *range, int32_t value){
 }
 
 blb_cursor_t *blb_cursor_create(int32_t offset, bool fixed){
-    blb_cursor_t cursor = (blb_cursor_t)malloc(sizeof(blb_cursor_t));
+    // إصلاح: إضافة * وتعديل الـ Cast هنا
+    blb_cursor_t *cursor = (blb_cursor_t*)malloc(sizeof(blb_cursor_t));
     if(!cursor) return NULL;
 
     cursor->offset = offset;
@@ -133,7 +137,8 @@ bool blb_cursor_jump(blb_cursor_t *cursor, uint32_t value){
 }
 
 blb_blob_t *blb_blob_create(uint32_t size, uint8_t step){
-    blb_blob_t blob = (blb_blob_t)malloc(sizeof(blb_blob_t));
+    // إصلاح: إضافة * وتعديل الـ Cast هنا
+    blb_blob_t *blob = (blb_blob_t*)malloc(sizeof(blb_blob_t));
     if(blob){
         blob->block = blb_block_create(size);
         if(blob->block){
@@ -147,107 +152,26 @@ blb_blob_t *blb_blob_create(uint32_t size, uint8_t step){
             }
             blb_block_delete(blob->block);
         }
-        blb_blob_delete(blob);
+        blb_blob_delete(blob); // مصلحة تلقائياً بعد جعل blob مؤشر
     }
     return NULL;
 }
+
 void blb_blob_delete(blb_blob_t *blob){
     if(blob){
         if(blob->block) blb_block_delete(blob->block);
         if(blob->range) blb_range_delete(blob->range);
         if(blob->cursor) blb_cursor_delete(blob->cursor);
+        free(blob); // إضافة: تحرير الـ blob نفسه من الذاكرة
     }
 }
 
 bool blb_blob_step(blb_blob_t *blob, int32_t step){
-    if(blob && blb_range_in(blob->range, (blob->range->start + step))){
+    if(blob && blb_range_in(blob->range, (blob->cursor->offset + step))){
         return blb_cursor_step(blob->cursor, step);
     }
     return false;
 }
-
-
-int main3(void){
-    blb_cursor_t *c = blb_cursor_create(7, false);
-    if(c){
-        printf("offset: %d fixed: %d\n",
-            c->offset, c->fixed);
-        
-        blb_cursor_step(c, 1);
-        blb_cursor_step(c, 1);
-        blb_cursor_step(c, 4);
-        blb_cursor_step(c, -2);
-        
-        printf("offset: %d fixed: %d\n",
-            c->offset, c->fixed);
-
-        blb_cursor_jump(c, 33);
-        blb_cursor_step(c, -7);
-        blb_cursor_step(c, 16);
-
-        printf("offset: %d fixed: %d\n",
-            c->offset, c->fixed);
-
-
-        blb_cursor_delete(c);
-    }
-    return 0;
-}
-
-int main4(void){
-    blb_range_t *r = blb_range_create(77, 100, 1, false);
-    if(r){
-        printf("start: %u size: %u step: %u fixed: %d\n",
-            r->start, r->size, r->step, r->fixed);
-
-        blb_range_slide(r, 8);
-        blb_range_slide(r, INT32_MAX);
-        // blb_range_slide(r, INT32_MAX);
-
-
-        printf("start: %u size: %u step: %u fixed: %d\n",
-            r->start, r->size, r->step, r->fixed);
-        
-        blb_range_resize(r, -16);
-        blb_range_resize(r, 88);
-
-
-        printf("start: %u size: %u step: %u fixed: %d\n",
-            r->start, r->size, r->step, r->fixed);
-
-        blb_range_delete(r);
-    }
-    return 0;
-}
-
-int main2(void){
-
-    blb_block_t *blk = blb_block_create(4);
-    struct blb_range_t rng;
-    struct blb_cursor_t c;
-
-    if(!blk){
-        fprintf(stderr, "Unable to allocate new block\n");
-        return 1;
-    }
-
-    blb_block_put(blk, 0, 0x24);
-    blb_block_put(blk, 1, 0xfe);
-    blb_block_put(blk, 2, 0xae);
-    blb_block_put(blk, 3, 0xdb);
-
-    uint8_t value = 0;
-    if(blb_block_get(blk, 2, &value)){
-        printf("value = %02x\n", value);
-    }
-
-    blb_block_print(blk, stdout);
-
-    blb_block_delete(blk);
-    return 0;
-}
-
-
 
 void blb_range_print(blb_range_t *range, FILE *output) {
     if (!range || !output) return;
@@ -275,11 +199,11 @@ void blb_blob_print(blb_blob_t *blob, FILE *output) {
         blb_cursor_print(blob->cursor, output);
     }
     if (blob->block) {
-        fprintf(output, "Block Memory Map:\n");
+        fprintf(output, "Block Memory Map:\\n");
         blb_block_print(blob->block, output);
     }
     
-    fprintf(output, "-------------------\n");
+    fprintf(output, "-------------------\\n");
 }
 
 bool blb_blob_jump(blb_blob_t *blob, uint32_t value){
@@ -308,18 +232,19 @@ bool blb_blob_get(blb_blob_t *blob, uint8_t *value){
     }
     return false;
 }
+
 int main(void){
     blb_blob_t *my_blob = blb_blob_create(10, 1);
     
     if (my_blob) {
         my_blob->cursor->fixed = false; 
         
-        if (blb_blob_jump(my_blob, 4)) {
-            blb_blob_put(my_blob, 0xAA);
+        if (blb_blob_jump(my_blob, 7)) {
+            blb_blob_put(my_blob, 0x0e);
         }
         
-        if (blb_blob_step(my_blob, 1)) {
-            blb_blob_put(my_blob, 0xBB);
+        if (blb_blob_step(my_blob, 3)) {
+            blb_blob_put(my_blob, 0x0f);
         }
         
         blb_blob_print(my_blob, stdout);
